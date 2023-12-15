@@ -1,0 +1,17 @@
+{
+  "name": "notification-service",
+  "roles": [
+    {
+      "applicationRole": "ns:notification-sender",
+      "name": "Notification Sender",
+      "description": "Can request a notification to be sent and retrieve details of notifications.",
+      "group": "notification-service"
+    },
+    {
+      "applicationRole": "ns:notification-admin",
+      "name": "Template Manager",
+      "description": "Can view details of configured templates",
+      "group": "notification-service"
+    }
+  ]
+}

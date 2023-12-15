@@ -1,0 +1,11 @@
+apiVersion: v2
+name: notification-service
+description: Helm Chart for Notification Service
+type: application
+version: 0.0.1
+appVersion: "0.0.1"
+
+dependencies:
+  - name: postgres
+    version: 0.0.1
+    condition: postgres.enabled

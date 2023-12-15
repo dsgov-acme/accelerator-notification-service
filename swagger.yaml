@@ -1,0 +1,554 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Notification Service
+  license:
+    name: MIT
+servers:
+  - url: /api/v1
+paths:
+  /admin/email-layout/{key}:
+    get:
+      summary: Get email layout by key
+      operationId: getEmailLayoutByKey
+      tags:
+        - admin-notification
+      parameters:
+        - name: key
+          in: path
+          description: The key of the email layout to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email layout object returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailLayoutResponseModel"
+        "404":
+          description: Email layout not found
+    put:
+      summary: Create a new email layout
+      operationId: createEmailLayout
+      tags:
+        - admin-notification
+      parameters:
+        - name: key
+          in: path
+          description: The key of the email layout to save
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Email layout object that needs to be added to the db
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailLayoutRequestModel"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailLayoutResponseModel"
+  /admin/email-layouts:
+    get:
+        summary: Get all email layouts
+        operationId: getEmailLayouts
+        tags:
+            - admin-notification
+        parameters:
+          - in: query
+            name: pageNumber
+            required: false
+            schema:
+              type: integer
+              default: 0
+            description: The page number for pagination (zero-based)
+          - name: pageSize
+            in: query
+            description: How many items to return at one time (max 200)
+            required: false
+            schema:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 200
+              default: 50
+          - in: query
+            name: sortOrder
+            description: Determines direction for resulting sorting.
+            required: false
+            schema:
+              type: string
+              $ref: "#/components/schemas/SortOrder"
+              default: DESC
+          - in: query
+            name: sortBy
+            description: Field to sort email layouts by. Email is chosen by default.
+            required: false
+            schema:
+              type: string
+              enum:
+                - key
+                - version
+                - status
+                - name
+                - createdTimestamp
+                - lastUpdatedTimestamp
+          - in: query
+            name: name
+            description: Field to filter email layouts by name
+            required: false
+            schema:
+              type: string
+        responses:
+            "200":
+                description: Email layout object returned
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/EmailLayoutPageDTO"
+            "401":
+              description: "You are unauthorized to make this request"
+            "404":
+                description: Email layout not found
+  /admin/templates/{key}:
+    get:
+      summary: Get template by key
+      operationId: getTemplateByKey
+      tags:
+        - admin-notification
+      parameters:
+        - name: key
+          in: path
+          description: The key of the template to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Template object returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateResponseModel"
+        "404":
+          description: Template not found
+    put:
+      summary: Create or update a template
+      operationId: createTemplate
+      tags:
+        - admin-notification
+      parameters:
+        - name: key
+          in: path
+          description: The key of the template to save
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Template object that needs to be added to the db
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateRequestModel"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateResponseModel"
+  /admin/templates:
+    get:
+      summary: Get all templates
+      operationId: getTemplates
+      tags:
+        - admin-notification
+      parameters:
+        - in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: The page number for pagination (zero-based)
+        - name: pageSize
+          in: query
+          description: How many items to return at one time (max 200)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 200
+            default: 50
+        - in: query
+          name: sortOrder
+          description: Determines direction for resulting sorting.
+          required: false
+          schema:
+            type: string
+            $ref: "#/components/schemas/SortOrder"
+        - in: query
+          name: sortBy
+          description: Field to sort templates by. Key is chosen by default.
+          required: false
+          schema:
+            type: string
+            enum:
+              - key
+              - version
+              - status
+              - name
+              - createdTimestamp
+              - lastUpdatedTimestamp
+        - in: query
+          name: name
+          description: Field to filter templates by name
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Template object returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplatePageDTO"
+        "401":
+          description: "You are unauthorized to make this request"
+        "404":
+          description: Template not found
+  /messages:
+    post:
+      summary: Send a message
+      operationId: sendMessage
+      tags:
+        - send-notification
+      requestBody:
+        description: Message object that needs to be sent
+        required: true
+        content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageRequestModel"
+      responses:
+        "200":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponseModel"
+        "400":
+          description: Invalid message
+        "401":
+          description: "You are unauthorized to make this request"
+        "404":
+          description: Template Message not found
+  /messages/{id}:
+    get:
+      summary: Get message by id
+      operationId: getMessageById
+      tags:
+        - send-notification
+      parameters:
+        - name: id
+          in: path
+          description: The id of the message to retrieve
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Message object returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponseModel"
+        "404":
+          description: Message not found
+  /admin/localization-data:
+    get: 
+      summary: Get localization data
+      operationId: getLocalizationData
+      tags:
+        - admin-notification
+      parameters:
+        - in: query
+          name: locale
+          required: true
+          description: Locale tag in IETF format
+          schema:
+            type: string
+            example: en-US
+      responses:
+        '200':
+          description: XLIFF document
+          content:
+            application/xml:
+              schema:
+                type: string
+    put:
+      summary: Update or add new localization data to existing configuration.
+      operationId: createOrUpdateLocalizationData
+      tags:
+        - admin-notification
+      requestBody:
+        description: XLIFF document
+        required: true
+        content:
+            application/xml:
+              schema:
+                type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/xml:
+              schema:
+                type: string
+components:
+  schemas:
+    EmailLayoutRequestModel:
+      type: object
+      required:
+        - name
+        - description
+        - content
+        - inputs
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        content:
+          type: string
+        inputs:
+          type: array
+          items:
+            type: string
+    EmailLayoutResponseModel:
+      type: object
+      required:
+        - id
+        - key
+        - version
+        - status
+        - name
+        - description
+        - content
+        - inputs
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        status:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        content:
+          type: string
+        inputs:
+          type: array
+          items:
+            type: string
+        createdBy:
+          type: string
+    SortOrder:
+      type: string
+      default: ASC
+      pattern: ^(ASC|DESC)$
+    SortBy:
+      type: string
+      default: email
+      pattern: ^(id|externalId|email|createdAt|displayName)$
+    EmailLayoutPageDTO:
+      type: object
+      required:
+        - items
+        - pagingMetadata
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailLayoutResponseModel'
+        pagingMetadata:
+          $ref: "#/components/schemas/PagingMetadata"
+    PagingMetadata:
+      description: Paging metadata in accordance with https://datatracker.ietf.org/doc/html/rfc8977
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          minimum: 0
+          maximum: 200
+        pageNumber:
+          type: integer
+          minimum: 0
+        nextPage:
+          type: string
+    TemplateRequestModel:
+      type: object
+      required:
+        - name
+        - description
+        - parameters
+        - emailFormat
+        - smsFormat
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+            pattern: ^(String|Number|Date|DateTime)$
+        emailFormat:
+          $ref: "#/components/schemas/EmailFormatModel"
+        smsFormat:
+          type: object
+          properties:
+            message:
+              $ref: "#/components/schemas/LocalizedTemplateModel"
+    TemplateResponseModel:
+      type: object
+      required:
+        - id
+        - key
+        - version
+        - status
+        - name
+        - description
+        - parameters
+        - emailFormat
+        - smsFormat
+        - createdBy
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        status:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/MapModel"
+        emailFormat:
+          $ref: "#/components/schemas/EmailFormatModel"
+        smsFormat:
+          type: object
+          properties:
+            message:
+              $ref: "#/components/schemas/LocalizedTemplateModel"
+        createdBy:
+          type: string
+    EmailFormatModel:
+      type: object
+      required:
+        - layoutKey
+        - subject
+        - content
+      properties:
+        layoutKey:
+          type: string
+        subject:
+          $ref: "#/components/schemas/LocalizedTemplateModel"
+        content:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/LocalizedTemplateModel"
+    LocalizedTemplateModel:
+      type: object
+      required:
+        - templates
+      properties:
+        templates:
+          $ref: "#/components/schemas/MapModel"
+    MapModel:
+      type: object
+      additionalProperties:
+        type: string
+    TemplatePageDTO:
+      type: object
+      required:
+        - items
+        - pagingMetadata
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateResponseModel'
+        pagingMetadata:
+          $ref: "#/components/schemas/PagingMetadata"
+    MessageRequestModel:
+      type: object
+      required:
+        - userId
+        - templateKey
+        - parameters
+      properties:
+        userId:
+          type: string
+          format: uuid
+        templateKey:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/MapModel"
+    MessageResponseModel:
+      type: object
+      required:
+        - id
+        - userId
+        - templateKey
+        - parameters
+        - status
+        - requestedTimestamp
+        - sentTimestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        templateKey:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/MapModel"
+        status:
+          type: string
+        requestedTimestamp:
+          type: string
+          format: date-time
+        sentTimestamp:
+          type: string
+          format: date-time
+
+              

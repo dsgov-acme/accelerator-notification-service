@@ -1,0 +1,39 @@
+plugins {
+    id 'org.openapi.generator' version '6.6.0' apply false
+    id 'com.google.cloud.tools.jib' version '3.3.1' apply false
+    id 'org.sonarqube' version '4.3.1.3277' apply false
+    id 'org.owasp.dependencycheck' version '8.2.1' apply false
+    id 'com.diffplug.spotless' version '6.22.0' apply false
+    id 'com.github.spotbugs' version '5.0.14' apply false
+    id 'pmd'
+}
+
+allprojects {
+    group = 'io.nuvalence.platform.notification'
+    version = '0.0.1-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+        }
+    }
+
+    dependencies {
+        configurations.configureEach {
+            resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.apache.bcel' && details.requested.name == 'bcel' && details.requested.version == '6.5.0') {
+                    details.useVersion '6.6.0'
+                    details.because 'fixes critical bug in 6.5.0'
+                }
+            }
+
+            resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'com.google.code.gson' && details.requested.name == 'gson' && details.requested.version == '2.8.5') {
+                    details.useVersion '2.8.9'
+                    details.because 'fixes critical bug in versions before 2.8.9'
+                }
+            }
+        }
+    }
+}

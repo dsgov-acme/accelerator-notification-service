@@ -1,0 +1,109 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.1.3'
+	id 'io.spring.dependency-management' version '1.1.3'
+	id 'com.google.cloud.tools.jib'
+	id 'checkstyle'
+	id 'jacoco'
+	id 'com.diffplug.spotless'
+	id 'com.github.spotbugs'
+	id 'pmd'
+	id 'org.sonarqube'
+}
+
+java {
+	sourceCompatibility = '17'
+	targetCompatibility = '17'
+}
+
+apply from: "${rootDir}/gradle/openapi-tools/server.gradle"
+apply from: "${rootDir}/gradle/code-quality.gradle"
+
+def mapstructVersion = '1.5.5.Final'
+
+configurations {
+	compileOnly.extendsFrom annotationPocessor
+}
+
+dependencies {
+	annotationProcessor 'org.projectlombok:lombok'
+	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+	implementation project(':user-management-client')
+	//implementation files('libs/user-management-client-0.0.1-SNAPSHOT.jar')
+
+	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+
+	compileOnly 'com.google.code.findbugs:annotations:3.0.1'
+	compileOnly 'org.springframework.boot:spring-boot-devtools'
+	compileOnly 'org.projectlombok:lombok'
+
+	implementation 'net.sf.okapi.filters:okapi-filter-xliff:1.45.0'
+	implementation 'org.jdom:jdom2:2.0.6.1'
+
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.integration:spring-integration-core'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-pubsub:4.8.2'
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-secretmanager:4.8.2'
+	implementation 'com.sendgrid:sendgrid-java:4.4.1'
+
+	implementation 'com.github.jknack:handlebars:4.3.1'
+
+	implementation 'io.nuvalence.dsgov:dsgov-auth:1.0.0'
+	implementation 'io.nuvalence.dsgov:dsgov-logging:1.0.0'
+	implementation 'io.nuvalence.dsgov:dsgov-events:1.1.3'
+	implementation 'org.liquibase:liquibase-core'
+
+	// version bump to address known CVEs
+	implementation 'org.yaml:snakeyaml:2.2'
+
+	runtimeOnly 'org.postgresql:postgresql:42.6.0'
+
+	testRuntimeOnly 'com.h2database:h2:2.2.224'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	implementation 'com.twilio.sdk:twilio:9.9.1'
+	testImplementation 'org.mockito:mockito-inline:4.5.1'
+
+	//cloud trace
+	implementation 'com.google.cloud:spring-cloud-gcp-starter-trace:4.8.2'
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		exceptionFormat = 'full'
+	}
+}
+
+jacocoTestReport {
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+sonarqube {
+	properties {
+		property 'sonar.dependencyCheck.htmlReportPath', 'build/reports/dependency-check-report.html'
+		property 'sonar.dependencyCheck.jsonReportPath', 'build/reports/dependency-check-report.json'
+		property 'sonar.dependencyCheck.summarize', true
+	}
+}
+
+test.finalizedBy jacocoTestReport
+tasks.named('sonarqube').configure {
+	dependsOn test
+}
+
+tasks.withType(JavaCompile) {
+	options.compilerArgs = [
+			'-Amapstruct.suppressGeneratorTimestamp=true'
+	]
+}

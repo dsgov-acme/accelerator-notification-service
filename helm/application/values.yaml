@@ -1,0 +1,48 @@
+namespace: "accelerator"
+
+postgres:
+  enabled: false
+  namespace: "accelerator"
+
+ingress:
+  enabled: false
+
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  notificationService:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1024Mi
+  cerbos:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1024Mi
+
+image:
+  pullPolicy: "IfNotPresent"
+  repository: "notification-service"
+  tag: "latest"
+
+net:
+  applicationPort: 8080
+  servicePort: 80
+  contextPath: "/ns"
+  readinessProbe:
+    path: "/actuator/health"
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+    failureThreshold: 10
