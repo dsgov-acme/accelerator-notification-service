@@ -15,11 +15,11 @@ spring:
   cloud:
     gcp:
       pubsub:
-        topic: NOTIFICATION_MSG_QUEUE
-        deadLetterTopic: NOTIFICATION_DEAD_LETTER_TEST
+        topic: projects/accelerator-dev-b6f2/topics/NOTIFICATION_MSG_QUEUE
+        deadLetterTopic: projects/accelerator-dev-b6f2/topics/NOTIFICATION_DEAD_LETTER_TEST
         subscriber:
-          fully-qualified-name: NOTIFICATION_MSG_QUEUESUBSCRIPTION
-        subscription2: NOTIFICATION_MSG_QUEUESUBSCRIPTION
+          fully-qualified-name: projects/accelerator-dev-b6f2/subscription/NOTIFICATION_MSG_QUEUESUBSCRIPTION
+        subscription2: projects/accelerator-dev-b6f2/subscription/NOTIFICATION_MSG_QUEUESUBSCRIPTION
         enableTopicCreation: true
         emulator-enabled: true
         unit-test: true
