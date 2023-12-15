@@ -20,7 +20,7 @@ spring:
         subscriber:
           fully-qualified-name: NOTIFICATION_MSG_QUEUESUBSCRIPTION
         subscription2: NOTIFICATION_MSG_QUEUESUBSCRIPTION
-        enableTopicCreation: true
+        enableTopicCreation: false
         emulator-enabled: true
         unit-test: true
 
