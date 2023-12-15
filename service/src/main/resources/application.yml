@@ -1,0 +1,87 @@
+server:
+  servlet:
+    context-path: /ns
+  forward-headers-strategy: framework
+
+spring:
+  config:
+    import: sm://
+  sleuth:
+    sampler:
+      probability: ${OTEL_SAMPLER_PROBABILITY:1.0} # Valid values [0.0 - 1.0]
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_CONNECTION_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/changelog-master.xml
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_CONNECTION_URL}
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  cloud:
+    gcp:
+      project-id: ${GCP_PROJECT_ID}
+      pubsub:
+        topic: ${PUB_SUB_TOPIC}
+        deadLetterTopic: ${DEAD_LETTER_TOPIC}
+        subscription2: ${PUB_SUB_TOPIC_SUBSCRIPTION}
+        enableTopicCreation: ${PUBSUB_CREATE_TOPIC}
+        emulator-host: ${PUBSUB_EMULATOR_HOST:false}
+        emulator-enabled: ${PUBSUB_EMULATOR_ENABLED:false}
+
+events:
+  subscriber:
+    subscriptions: ${EVENT_NOTIFICATION_SUBSCRIPTION}
+    topics: ${EVENT_NOTIFICATION_TOPIC}
+
+twilio:
+  accountSID: ${TWILIO_ACCOUNT_SID}
+  authToken: ${TWILIO_AUTH_TOKEN}
+  phoneNumber: ${TWILIO_PHONE_NUMBER}
+
+localization:
+  default-locale: en
+
+management:
+  endpoints:
+    web:
+      cors:
+        allow-credentials: true
+        allowed-origins: ${ALLOWED_ORIGINS}
+        allowed-methods: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+        allowed-headers: "*"
+      exposure:
+        include: "*"
+
+auth:
+  token-filter:
+    self-signed:
+      issuer: ${TOKEN_ISSUER}
+      public-key: ${SELF_SIGN_PUBLIC_KEY}
+  token-client:
+    self-signed:
+      issuer: ${TOKEN_ISSUER}
+      private-key: ${SELF_SIGN_PRIVATE_KEY}
+      roles: "um:reader, um:application-client"
+
+cerbos:
+  uri: ${CERBOS_URI}
+
+userManagement:
+  baseUrl: ${USER_MANAGEMENT_BASE_URL}
+
+sendgrid:
+  contentType: ${SEND_GRID_EMAIL_CONTENT_TYPE}
+  sendEmailEndpoint: ${SEND_GRID_EMAIL_ENDPOINT}
+  apiKey: ${SEND_GRID_API_KEY}
+  from: ${SEND_GRID_SENDER}
+

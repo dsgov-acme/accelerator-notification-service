@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace | default "dsgov" }}
+  labels:
+    {{- include "notification-service.labels" . | nindent 4 }}
+spec:
+  {{- if or (not .Values.autoscaling.enabled) (.Values.postgres.enabled) }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "notification-service.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        roll: {{ randAlphaNum 5 | quote }}
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "notification-service.selectorLabels" . | nindent 8 }}
+    spec:
+      # Set the serviceAccountName in non-local Postgres situations
+      {{- if (not .Values.postgres.enabled) }}
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      {{- end }}
+      containers:
+        {{- if not .Values.postgres.enabled }}
+        # Utilize Cloud SQL Proxy Sidecar
+        {{- include "notification-service.cloudsql.sidecar" . | nindent 8 }}
+        {{- end }}
+        - name: {{ .Values.environment }}-{{ .Release.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ENV
+              value: {{ default "dev" .Values.environment | quote }}
+            {{- include "env.tpl" .Values.env | indent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ default "8080" .Values.net.applicationPort }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.net.contextPath }}{{ .Values.net.readinessProbe.path }}
+              port: {{ .Values.net.applicationPort }}
+              scheme: HTTP
+            periodSeconds: {{ .Values.net.readinessProbe.periodSeconds }}
+
+            {{- if not .Values.postgres.enabled }}
+            initialDelaySeconds: {{ .Values.net.readinessProbe.initialDelaySeconds }}
+            successThreshold: {{ .Values.net.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.net.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.net.readinessProbe.timeoutSeconds }}
+            {{- end }}
+          volumeMounts:
+            # Mount the shared volume containing the socket
+            - name: sock
+              mountPath: /sock
+          resources:
+            requests:
+              cpu: {{ .Values.resources.notificationService.requests.cpu }}
+              memory: {{ .Values.resources.notificationService.requests.memory }}
+            limits:
+              memory: {{ .Values.resources.notificationService.limits.memory }}
+        - name: cerbos
+          image: "ghcr.io/cerbos/cerbos:0.24.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "server"
+            - "--config=/config/config.yaml"
+            - "--log-level=INFO"
+          ports:
+            - containerPort: 3592
+              protocol: TCP
+          volumeMounts:
+            # Mount the shared volume containing the socket
+            - name: sock
+              mountPath: /sock
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: policies
+              mountPath: /policies
+          resources:
+            requests:
+              cpu: {{ .Values.resources.cerbos.requests.cpu }}
+              memory: {{ .Values.resources.cerbos.requests.memory }}
+            limits:
+              memory: {{ .Values.resources.cerbos.limits.memory }}
+      {{- if not .Values.postgres.enabled }}
+      # Initialize CloudSQL Proxy Sidecar with connection string
+      {{- include "notification-service.cloudsql.initContainer" . | nindent 6 }}
+      {{- end }}
+
+      {{- if not .Values.postgres.enabled }}
+      # required volume for persisting CloudSQL connection string
+      # from initContainer to sidecar
+      {{- include "notification-service.cloudsql.volume" . | nindent 6 }}
+      {{- end }}
+      {{- if .Values.postgres.enabled }}
+      volumes:
+        # Shared volume containing the socket.
+        - name: sock
+          emptyDir: { }
+        - name: config
+          configMap:
+            name: notification-service-cerbos-config
+        - name: policies
+          configMap:
+            name: notification-service-cerbos-policies
+      {{- end }}
+---
+{{- if .Values.env.PUBSUB_EMULATOR_HOST }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-emulator
+  namespace: {{ .Values.namespace | default "dsgov" }}
+  labels:
+    app: gcloud-pubsub-emulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gcloud-pubsub-emulator
+  template:
+    metadata:
+      labels:
+        app: gcloud-pubsub-emulator
+    spec:
+      containers:
+        - name: pubsub-emulator
+          image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+          command:
+            - gcloud
+            - beta
+            - emulators
+            - pubsub
+            - start
+            - --host-port=0.0.0.0:{{ (split ":" .Values.env.PUBSUB_EMULATOR_HOST)._1 }}
+          ports:
+            - name: http
+              containerPort: {{ (split ":" .Values.env.PUBSUB_EMULATOR_HOST)._1 }}
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.resources.pubSubEmulator.requests.cpu }}
+              memory: {{ .Values.resources.pubSubEmulator.requests.memory }}
+            limits:
+              memory: {{ .Values.resources.pubSubEmulator.limits.memory }}
+{{- end }}
